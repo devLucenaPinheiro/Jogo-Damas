@@ -1,0 +1,49 @@
+package com.mycompany.jogodamas;
+
+import javax.swing.*;
+import java.awt.*;
+
+public class JogoDamas extends JFrame {
+    JButton[][] bt = new JButton[8][8];
+
+    public JogoDamas() {
+        setTitle("Damas");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLayout(new GridLayout(8, 8));
+        setSize(800, 800);
+        setLocationRelativeTo(null); // Centraliza o JFrame na tela
+
+        // Loop para criar e posicionar os botões
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                bt[i][j] = new JButton();
+                add(bt[i][j]);
+
+                // Determina a cor do botão com base na posição
+                if ((i + j) % 2 == 0) {
+                    bt[i][j].setBackground(Color.WHITE);
+                } else {
+                    bt[i][j].setBackground(Color.DARK_GRAY);
+                }
+
+                // Adiciona as peças
+                if ((i + j) % 2 != 0) {
+                    if (i < 3) {
+                        bt[i][j].setText("⚫"); // Peça preta
+                        bt[i][j].setForeground(Color.BLACK);
+                    } else if (i > 4) {
+                        bt[i][j].setText("⚪"); // Peça branca
+                        bt[i][j].setForeground(Color.WHITE);
+                    }
+                }
+            }
+        }
+
+        setVisible(true);
+    }
+
+    public static void main(String[] args) {
+        new JogoDamas();
+    }
+}
+
