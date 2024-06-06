@@ -75,45 +75,46 @@ public class JogoDamas extends JFrame {
     }
 
     private class ButtonClickListener implements ActionListener {
-        private int row, col;
+    private int row, col;
 
-        public ButtonClickListener(int row, int col) {
-            this.row = row;
-            this.col = col;
-        }
+    public ButtonClickListener(int row, int col) {
+        this.row = row;
+        this.col = col;
+    }
 
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            if (!selected) {
-                if (board[row][col] != ' ' && isCurrentPlayerPiece(row, col)) {
+    @Override
+    public void actionPerformed(ActionEvent e) {
+        if (!selected) {
+            if (board[row][col] != ' ' && isCurrentPlayerPiece(row, col)) {
+                selected = true;
+                selectedRow = row;
+                selectedCol = col;
+                bt[row][col].setBackground(Color.LIGHT_GRAY);
+                highlightPossibleMoves(row, col);
+            }
+        } else {
+            if (selectedRow == row && selectedCol == col) {
+                clearHighlights();
+                selected = false;
+            } else {
+                boolean wasCapture = movePiece(row, col);
+                if (wasCapture && canCaptureAgain(row, col)) {
                     selected = true;
                     selectedRow = row;
                     selectedCol = col;
                     bt[row][col].setBackground(Color.LIGHT_GRAY);
                     highlightPossibleMoves(row, col);
-                }
-            } else {
-                if (selectedRow == row && selectedCol == col) {
-                    clearHighlights();
+                    return;
+                } else if (wasCapture || isValidMove(row, col)) {
                     selected = false;
-                } else {
-                    if (movePiece(row, col)) {
-                        if (canCaptureAgain(row, col)) {
-                            selected = true;
-                            selectedRow = row;
-                            selectedCol = col;
-                            bt[row][col].setBackground(Color.LIGHT_GRAY);
-                            highlightPossibleMoves(row, col);
-                        } else {
-                            selected = false;
-                            updateBoard();
-                            whiteTurn = !whiteTurn;
-                        }
-                    }
+                    updateBoard();
+                    whiteTurn = !whiteTurn;
                 }
             }
         }
     }
+}
+
 
     private boolean isCurrentPlayerPiece(int row, int col) {
         if (whiteTurn) {
@@ -128,11 +129,13 @@ public class JogoDamas extends JFrame {
             char piece = board[selectedRow][selectedCol];
             board[row][col] = piece;
             board[selectedRow][selectedCol] = ' ';
-            
+            boolean wasCapture = false;
+
             if (Math.abs(row - selectedRow) == 2 && Math.abs(col - selectedCol) == 2) {
                 int captureRow = (row + selectedRow) / 2;
                 int captureCol = (col + selectedCol) / 2;
                 board[captureRow][captureCol] = ' ';
+                wasCapture = true;
             }
 
             if ((row == 0 && piece == 'W') || (row == 7 && piece == 'B')) {
@@ -140,73 +143,67 @@ public class JogoDamas extends JFrame {
             }
             clearHighlights();
             updateButton(row, col);
-            return true;
+            return wasCapture;
         }
         return false;
     }
 
     private boolean canCaptureAgain(int row, int col) {
-    char piece = board[row][col];
-    int[] dx = {-2, -2, 2, 2};
-    int[] dy = {-2, 2, -2, 2};
-    for (int i = 0; i < 4; i++) {
-        int newRow = row + dx[i];
-        int newCol = col + dy[i];
-        if (isValidMove(newRow, newCol)) {
-            int captureRow = (row + newRow) / 2;
-            int captureCol = (col + newCol) / 2;
-            if (board[captureRow][captureCol] != ' ' && board[captureRow][captureCol] != piece && board[captureRow][captureCol] != Character.toUpperCase(piece)) {
-                int nextRow = newRow + dx[i];
-                int nextCol = newCol + dy[i];
-                if (isValidMove(nextRow, nextCol)) {
-                    if (canCaptureAgain(nextRow, nextCol)) {
-                        return true;
-                    }
+        char piece = board[row][col];
+        char opponent = whiteTurn ? 'B' : 'W';
+        char opponentKing = Character.toLowerCase(opponent);
+
+        int[] dx = {-2, -2, 2, 2};
+        int[] dy = {-2, 2, -2, 2};
+
+        for (int i = 0; i < 4; i++) {
+            int newRow = row + dx[i];
+            int newCol = col + dy[i];
+            if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8 && board[newRow][newCol] == ' ') {
+                int midRow = (row + newRow) / 2;
+                int midCol = (col + newCol) / 2;
+                if ((board[midRow][midCol] == opponent || board[midRow][midCol] == opponentKing) && board[newRow][newCol] == ' ') {
+                    return true;
                 }
             }
         }
+        return false;
     }
-    return false;
-}
-
 
     private boolean isValidMove(int row, int col) {
-    if (row < 0 || row >= 8 || col < 0 || col >= 8) return false;
+        if (row < 0 || row >= 8 || col < 0 || col >= 8) return false;
 
-    char piece = board[selectedRow][selectedCol];
-    char opponent = whiteTurn ? 'B' : 'W';
-    char opponentKing = Character.toLowerCase(opponent);
+        char piece = board[selectedRow][selectedCol];
+        char opponent = whiteTurn ? 'B' : 'W';
+        char opponentKing = Character.toLowerCase(opponent);
 
-    if (piece == 'w' || piece == 'b' ) {
-        if (Math.abs(row - selectedRow) == 1 && Math.abs(col - selectedCol) == 1) {
-            return true;
-        } else if (Math.abs(row - selectedRow) == 2 && Math.abs(col - selectedCol) == 2) {
-            int midRow = (row + selectedRow) / 2;
-            int midCol = (col + selectedCol) / 2;
-            return (board[midRow][midCol] == opponent || board[midRow][midCol] == opponentKing);
+        if (piece == 'w' || piece == 'b') {
+            if (Math.abs(row - selectedRow) == 1 && Math.abs(col - selectedCol) == 1) {
+                return true;
+            } else if (Math.abs(row - selectedRow) == 2 && Math.abs(col - selectedCol) == 2) {
+                int midRow = (row + selectedRow) / 2;
+                int midCol = (col + selectedCol) / 2;
+                return (board[midRow][midCol] == opponent || board[midRow][midCol] == opponentKing) && board[row][col] == ' ';
+            }
+        } else {
+            int dir = whiteTurn ? -1 : 1;
+            if (row - selectedRow == dir && Math.abs(col - selectedCol) == 1) {
+                return true;
+            } else if (Math.abs(row - selectedRow) == 2 && Math.abs(col - selectedCol) == 2) {
+                int midRow = (row + selectedRow) / 2;
+                int midCol = (col + selectedCol) / 2;
+                return (piece == 'W' && row - selectedRow == -2 && (board[midRow][midCol] == 'B' || board[midRow][midCol] == 'b') && board[row][col] == ' ') ||
+                       (piece == 'B' && row - selectedRow == 2 && (board[midRow][midCol] == 'W' || board[midRow][midCol] == 'w') && board[row][col] == ' ');
+            }
         }
-    } else {
-        int dir = whiteTurn ? -1 : 1;
-        if (row - selectedRow == dir && Math.abs(col - selectedCol) == 1) {
-            return true;
-        } else if (Math.abs(row - selectedRow) == 2 && Math.abs(col - selectedCol) == 2) {
-            int midRow = (row + selectedRow) / 2;
-            int midCol = (col + selectedCol) / 2;
-            return (piece == 'W' && row - selectedRow == -2 && (board[midRow][midCol] == 'B' || board[midRow][midCol] == 'b')) ||
-                   (piece == 'B' && row - selectedRow == 2 && (board[midRow][midCol] == 'W' || board[midRow][midCol] == 'w'));
-        }
+        return false;
     }
-    return false;
-}
-
-
-
 
     private void highlightPossibleMoves(int row, int col) {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 if (isValidMove(i, j)) {
-                    bt[i][j].setBackground(Color.YELLOW);
+                    bt[i][j].setBackground(Color.GREEN);
                 }
             }
         }
@@ -218,7 +215,7 @@ public class JogoDamas extends JFrame {
                 if ((i + j) % 2 == 0) {
                     bt[i][j].setBackground(Color.WHITE);
                 } else {
-                    bt[i][j].setBackground(Color.DARK_GRAY);
+                    bt [i][j].setBackground(Color.DARK_GRAY);
                 }
             }
         }
