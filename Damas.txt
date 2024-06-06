@@ -2,9 +2,14 @@ package com.mycompany.jogodamas;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 public class JogoDamas extends JFrame {
-    JButton[][] bt = new JButton[8][8];
+    private JButton[][] bt = new JButton[8][8];
+    private char[][] board = new char[8][8];
+    private boolean selected = false;
+    private int selectedRow, selectedCol;
 
     public JogoDamas() {
         setTitle("Damas");
@@ -13,37 +18,105 @@ public class JogoDamas extends JFrame {
         setSize(800, 800);
         setLocationRelativeTo(null); // Centraliza o JFrame na tela
 
-        // Loop para criar e posicionar os botões
+        initializeBoard();
+        initializeButtons();
+
+        setVisible(true);
+    }
+
+    private void initializeBoard() {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if ((i + j) % 2 != 0) {
+                    if (i < 3) {
+                        board[i][j] = 'B'; // Peça preta
+                    } else if (i > 4) {
+                        board[i][j] = 'W'; // Peça branca
+                    } else {
+                        board[i][j] = ' ';
+                    }
+                } else {
+                    board[i][j] = ' ';
+                }
+            }
+        }
+    }
+
+    private void initializeButtons() {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 bt[i][j] = new JButton();
                 add(bt[i][j]);
 
-                // Determina a cor do botão com base na posição
+                if ((i + j) % 2 == 0) {
+                    bt[i][j].setBackground(Color.WHITE);
+                } else {
+                    bt[i][j].setBackground(Color.DARK_GRAY);
+                    bt[i][j].setForeground(Color.BLACK);
+                    bt[i][j].addActionListener(new ButtonClickListener(i, j));
+                    updateButton(i, j);
+                }
+            }
+        }
+    }
+
+    private void updateButton(int i, int j) {
+        if (board[i][j] == 'B') {
+            bt[i][j].setText("⚫");
+        } else if (board[i][j] == 'W') {
+            bt[i][j].setText("⚪");
+        } else {
+            bt[i][j].setText("");
+        }
+    }
+
+    private class ButtonClickListener implements ActionListener {
+        private int row, col;
+
+        public ButtonClickListener(int row, int col) {
+            this.row = row;
+            this.col = col;
+        }
+
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (!selected) {
+                if (board[row][col] != ' ') {
+                    selected = true;
+                    selectedRow = row;
+                    selectedCol = col;
+                    bt[row][col].setBackground(Color.YELLOW); // Marca a peça selecionada
+                }
+            } else {
+                movePiece(row, col);
+                selected = false;
+                updateBoard();
+            }
+        }
+    }
+
+    private void movePiece(int row, int col) {
+        if (board[row][col] == ' ' && Math.abs(row - selectedRow) == 1 && Math.abs(col - selectedCol) == 1) {
+            board[row][col] = board[selectedRow][selectedCol];
+            board[selectedRow][selectedCol] = ' ';
+        }
+        // Implementar outras regras de movimento conforme necessário
+    }
+
+    private void updateBoard() {
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
                 if ((i + j) % 2 == 0) {
                     bt[i][j].setBackground(Color.WHITE);
                 } else {
                     bt[i][j].setBackground(Color.DARK_GRAY);
                 }
-
-                // Adiciona as peças
-                if ((i + j) % 2 != 0) {
-                    if (i < 3) {
-                        bt[i][j].setText("⚫"); // Peça preta
-                        bt[i][j].setForeground(Color.BLACK);
-                    } else if (i > 4) {
-                        bt[i][j].setText("⚪"); // Peça branca
-                        bt[i][j].setForeground(Color.WHITE);
-                    }
-                }
+                updateButton(i, j);
             }
         }
-
-        setVisible(true);
     }
 
     public static void main(String[] args) {
         new JogoDamas();
     }
 }
-
