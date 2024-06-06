@@ -6,8 +6,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 public class JogoDamas extends JFrame {
-    private JButton[][] bt = new JButton[8][8];
-    private char[][] board = new char[8][8];
+    private final JButton[][] bt = new JButton[8][8];
+    private final char[][] board = new char[8][8];
     private boolean selected = false;
     private int selectedRow, selectedCol;
     private boolean whiteTurn = true;
@@ -53,8 +53,8 @@ public class JogoDamas extends JFrame {
                     bt[i][j].setBackground(Color.DARK_GRAY);
                     bt[i][j].setForeground(Color.BLACK);
                     bt[i][j].addActionListener(new ButtonClickListener(i, j));
-                    updateButton(i, j);
                 }
+                updateButton(i, j);
             }
         }
     }
@@ -67,7 +67,7 @@ public class JogoDamas extends JFrame {
             bt[i][j].setText("W");
             bt[i][j].setForeground(Color.WHITE);
         } else if (board[i][j] == 'b' || board[i][j] == 'w') {
-            bt[i][j].setText("K");
+            bt[i][j].setText("D");
             bt[i][j].setForeground(board[i][j] == 'b' ? Color.BLACK : Color.WHITE);
         } else {
             bt[i][j].setText("");
@@ -75,46 +75,50 @@ public class JogoDamas extends JFrame {
     }
 
     private class ButtonClickListener implements ActionListener {
-    private int row, col;
+        private final int row, col;
 
-    public ButtonClickListener(int row, int col) {
-        this.row = row;
-        this.col = col;
-    }
+        public ButtonClickListener(int row, int col) {
+            this.row = row;
+            this.col = col;
+        }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        if (!selected) {
-            if (board[row][col] != ' ' && isCurrentPlayerPiece(row, col)) {
-                selected = true;
-                selectedRow = row;
-                selectedCol = col;
-                bt[row][col].setBackground(Color.LIGHT_GRAY);
-                highlightPossibleMoves(row, col);
-            }
-        } else {
-            if (selectedRow == row && selectedCol == col) {
-                clearHighlights();
-                selected = false;
-            } else {
-                boolean wasCapture = movePiece(row, col);
-                if (wasCapture && canCaptureAgain(row, col)) {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+            if (!selected) {
+                if (board[row][col] != ' ' && isCurrentPlayerPiece(row, col)) {
                     selected = true;
                     selectedRow = row;
                     selectedCol = col;
                     bt[row][col].setBackground(Color.LIGHT_GRAY);
                     highlightPossibleMoves(row, col);
-                    return;
-                } else if (wasCapture || isValidMove(row, col)) {
+                }
+            } else {
+                if (selectedRow == row && selectedCol == col) {
+                    clearHighlights();
                     selected = false;
+                } else if (isValidMove(row, col)) {
+                    boolean wasCapture = movePiece(row, col);
+                    clearHighlights();
                     updateBoard();
-                    whiteTurn = !whiteTurn;
+
+                    if (wasCapture && canCaptureAgain(row, col)) {
+                        selected = true;
+                        selectedRow = row;
+                        selectedCol = col;
+                        bt[row][col].setBackground(Color.LIGHT_GRAY);
+                        highlightPossibleMoves(row, col);
+                    } else {
+                        selected = false;
+                        whiteTurn = !whiteTurn;
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(null, "Movimento invalido!", "Erro", JOptionPane.ERROR_MESSAGE);
+                    clearHighlights();
+                    selected = false;
                 }
             }
         }
     }
-}
-
 
     private boolean isCurrentPlayerPiece(int row, int col) {
         if (whiteTurn) {
@@ -125,27 +129,23 @@ public class JogoDamas extends JFrame {
     }
 
     private boolean movePiece(int row, int col) {
-        if (board[row][col] == ' ' && isValidMove(row, col)) {
-            char piece = board[selectedRow][selectedCol];
-            board[row][col] = piece;
-            board[selectedRow][selectedCol] = ' ';
-            boolean wasCapture = false;
+        char piece = board[selectedRow][selectedCol];
+        board[row][col] = piece;
+        board[selectedRow][selectedCol] = ' ';
+        boolean wasCapture = false;
 
-            if (Math.abs(row - selectedRow) == 2 && Math.abs(col - selectedCol) == 2) {
-                int captureRow = (row + selectedRow) / 2;
-                int captureCol = (col + selectedCol) / 2;
-                board[captureRow][captureCol] = ' ';
-                wasCapture = true;
-            }
-
-            if ((row == 0 && piece == 'W') || (row == 7 && piece == 'B')) {
-                board[row][col] = Character.toLowerCase(piece);
-            }
-            clearHighlights();
-            updateButton(row, col);
-            return wasCapture;
+        if (Math.abs(row - selectedRow) == 2 && Math.abs(col - selectedCol) == 2) {
+            int captureRow = (row + selectedRow) / 2;
+            int captureCol = (col + selectedCol) / 2;
+            board[captureRow][captureCol] = ' ';
+            wasCapture = true;
         }
-        return false;
+
+        if ((row == 0 && piece == 'W') || (row == 7 && piece == 'B')) {
+            board[row][col] = Character.toLowerCase(piece);
+        }
+        updateButton(row, col);
+        return wasCapture;
     }
 
     private boolean canCaptureAgain(int row, int col) {
@@ -172,6 +172,7 @@ public class JogoDamas extends JFrame {
 
     private boolean isValidMove(int row, int col) {
         if (row < 0 || row >= 8 || col < 0 || col >= 8) return false;
+        if (board[row][col] != ' ') return false;
 
         char piece = board[selectedRow][selectedCol];
         char opponent = whiteTurn ? 'B' : 'W';
@@ -215,7 +216,7 @@ public class JogoDamas extends JFrame {
                 if ((i + j) % 2 == 0) {
                     bt[i][j].setBackground(Color.WHITE);
                 } else {
-                    bt [i][j].setBackground(Color.DARK_GRAY);
+                    bt[i][j].setBackground(Color.DARK_GRAY);
                 }
             }
         }
@@ -224,11 +225,6 @@ public class JogoDamas extends JFrame {
     private void updateBoard() {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
-                if ((i + j) % 2 == 0) {
-                    bt[i][j].setBackground(Color.WHITE);
-                } else {
-                    bt[i][j].setBackground(Color.DARK_GRAY);
-                }
                 updateButton(i, j);
             }
         }
@@ -248,10 +244,10 @@ public class JogoDamas extends JFrame {
             }
         }
         if (!whiteExists) {
-            JOptionPane.showMessageDialog(this, "Black wins!");
+            JOptionPane.showMessageDialog(this, "Pretas Venceram!");
             System.exit(0);
         } else if (!blackExists) {
-            JOptionPane.showMessageDialog(this, "White wins!");
+            JOptionPane.showMessageDialog(this, "Brancas Venceram!");
             System.exit(0);
         }
     }
