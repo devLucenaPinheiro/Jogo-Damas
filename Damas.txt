@@ -1,5 +1,4 @@
 package com.mycompany.jogodamas;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -66,6 +65,9 @@ public class JogoDamas extends JFrame {
         } else if (board[i][j] == 'W') {
             bt[i][j].setText("W");
             bt[i][j].setForeground(Color.WHITE);
+        } else if (board[i][j] == 'b' || board[i][j] == 'w') {
+            bt[i][j].setText("K");
+            bt[i][j].setForeground(board[i][j] == 'b' ? Color.BLACK : Color.WHITE);
         } else {
             bt[i][j].setText("");
         }
@@ -89,44 +91,46 @@ public class JogoDamas extends JFrame {
                     bt[row][col].setBackground(Color.LIGHT_GRAY);
                 }
             } else {
-                movePiece(row, col);
-                selected = false;
-                updateBoard();
-                whiteTurn = !whiteTurn;
+                if (movePiece(row, col)) {
+                    selected = false;
+                    updateBoard();
+                    whiteTurn = !whiteTurn;
+                }
             }
         }
     }
 
     private boolean isCurrentPlayerPiece(int row, int col) {
         if (whiteTurn) {
-            return board[row][col] == 'W';
+            return board[row][col] == 'W' || board[row][col] == 'w';
         } else {
-            return board[row][col] == 'B';
+            return board[row][col] == 'B' || board[row][col] == 'b';
         }
     }
 
-    private void movePiece(int row, int col) {
+    private boolean movePiece(int row, int col) {
         if (board[row][col] == ' ' && isValidMove(row, col)) {
-            if((board[selectedRow][selectedCol]=='W'&& row < selectedRow)||
-               (board[selectedRow][selectedCol]=='B'&& row > selectedRow)||
-               (Character.toLowerCase(board[selectedRow][selectedCol])=='K')){
-                
-            board[row][col] = board[selectedRow][selectedCol];
-            board[selectedRow][selectedCol] = ' ';
-            // Check for capture
-            if (Math.abs(row - selectedRow) == 2 && Math.abs(col - selectedCol) == 2) {
-                int captureRow = (row + selectedRow) / 2;
-                int captureCol = (col + selectedCol) / 2;
-                board[captureRow][captureCol] = ' ';
-            }
-            if (row == 0 && board[row][col] == 'W') {
-                board[row][col] = 'K';
-            } else if (row == 7 && board[row][col] == 'B') {
-                board[row][col] = 'K';
+            if ((board[selectedRow][selectedCol] == 'W' && row < selectedRow) ||
+                    (board[selectedRow][selectedCol] == 'B' && row > selectedRow) ||
+                    Character.toUpperCase(board[selectedRow][selectedCol]) == 'K') {
+
+                board[row][col] = board[selectedRow][selectedCol];
+                board[selectedRow][selectedCol] = ' ';
+                // Check for capture
+                if (Math.abs(row - selectedRow) == 2 && Math.abs(col - selectedCol) == 2) {
+                    int captureRow = (row + selectedRow) / 2;
+                    int captureCol = (col + selectedCol) / 2;
+                    board[captureRow][captureCol] = ' ';
+                }
+                // Promote piece to king if it reaches the opposite end of the board
+                if ((row == 0 && board[row][col] == 'W') || (row == 7 && board[row][col] == 'B')) {
+                    board[row][col] = Character.toLowerCase(board[row][col]); // Promote to king
+                }
+                updateButton(row, col); // Update button representation after moving the piece
+                return true;
             }
         }
-       }
-        
+        return false;
     }
 
     private boolean isValidMove(int row, int col) {
@@ -136,6 +140,11 @@ public class JogoDamas extends JFrame {
             int midRow = (row + selectedRow) / 2;
             int midCol = (col + selectedCol) / 2;
             return board[midRow][midCol] != ' ' && board[midRow][midCol] != board[selectedRow][selectedCol];
+        }
+        // Check for movement for a king piece
+        else if (Character.toUpperCase(board[selectedRow][selectedCol]) == 'K' &&
+                Math.abs(row - selectedRow) == 1 && Math.abs(col - selectedCol) == 1) {
+            return true;
         }
         return false;
     }
@@ -158,7 +167,8 @@ public class JogoDamas extends JFrame {
         boolean whiteExists = false;
         boolean blackExists = false;
         for (int i = 0; i < 8; i++) {
-            for (int j = 0; j < 8; j++) {
+            for (int j = 0; j < 8; j++)
+{
                 if (board[i][j] == 'W' || board[i][j] == 'K') {
                     whiteExists = true;
                 } else if (board[i][j] == 'B' || board[i][j] == 'k') {
