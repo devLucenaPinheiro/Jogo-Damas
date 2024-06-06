@@ -10,17 +10,16 @@ public class JogoDamas extends JFrame {
     private char[][] board = new char[8][8];
     private boolean selected = false;
     private int selectedRow, selectedCol;
+    private boolean whiteTurn = true;
 
     public JogoDamas() {
         setTitle("Damas");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new GridLayout(8, 8));
-        setSize(800, 800);
-        setLocationRelativeTo(null); // Centraliza o JFrame na tela
-
+        setSize(800, 700);
+        setLocationRelativeTo(null);
         initializeBoard();
         initializeButtons();
-
         setVisible(true);
     }
 
@@ -29,9 +28,9 @@ public class JogoDamas extends JFrame {
             for (int j = 0; j < 8; j++) {
                 if ((i + j) % 2 != 0) {
                     if (i < 3) {
-                        board[i][j] = 'B'; // Peça preta
+                        board[i][j] = 'B';
                     } else if (i > 4) {
-                        board[i][j] = 'W'; // Peça branca
+                        board[i][j] = 'W';
                     } else {
                         board[i][j] = ' ';
                     }
@@ -62,9 +61,11 @@ public class JogoDamas extends JFrame {
 
     private void updateButton(int i, int j) {
         if (board[i][j] == 'B') {
-            bt[i][j].setText("⚫");
+            bt[i][j].setText("B");
+            bt[i][j].setForeground(Color.BLACK);
         } else if (board[i][j] == 'W') {
-            bt[i][j].setText("⚪");
+            bt[i][j].setText("W");
+            bt[i][j].setForeground(Color.WHITE);
         } else {
             bt[i][j].setText("");
         }
@@ -81,26 +82,62 @@ public class JogoDamas extends JFrame {
         @Override
         public void actionPerformed(ActionEvent e) {
             if (!selected) {
-                if (board[row][col] != ' ') {
+                if (board[row][col] != ' ' && isCurrentPlayerPiece(row, col)) {
                     selected = true;
                     selectedRow = row;
                     selectedCol = col;
-                    bt[row][col].setBackground(Color.YELLOW); // Marca a peça selecionada
+                    bt[row][col].setBackground(Color.LIGHT_GRAY);
                 }
             } else {
                 movePiece(row, col);
                 selected = false;
                 updateBoard();
+                whiteTurn = !whiteTurn;
             }
         }
     }
 
+    private boolean isCurrentPlayerPiece(int row, int col) {
+        if (whiteTurn) {
+            return board[row][col] == 'W';
+        } else {
+            return board[row][col] == 'B';
+        }
+    }
+
     private void movePiece(int row, int col) {
-        if (board[row][col] == ' ' && Math.abs(row - selectedRow) == 1 && Math.abs(col - selectedCol) == 1) {
+        if (board[row][col] == ' ' && isValidMove(row, col)) {
+            if((board[selectedRow][selectedCol]=='W'&& row < selectedRow)||
+               (board[selectedRow][selectedCol]=='B'&& row > selectedRow)||
+               (Character.toLowerCase(board[selectedRow][selectedCol])=='K')){
+                
             board[row][col] = board[selectedRow][selectedCol];
             board[selectedRow][selectedCol] = ' ';
+            // Check for capture
+            if (Math.abs(row - selectedRow) == 2 && Math.abs(col - selectedCol) == 2) {
+                int captureRow = (row + selectedRow) / 2;
+                int captureCol = (col + selectedCol) / 2;
+                board[captureRow][captureCol] = ' ';
+            }
+            if (row == 0 && board[row][col] == 'W') {
+                board[row][col] = 'K';
+            } else if (row == 7 && board[row][col] == 'B') {
+                board[row][col] = 'K';
+            }
         }
-        // Implementar outras regras de movimento conforme necessário
+       }
+        
+    }
+
+    private boolean isValidMove(int row, int col) {
+        if (Math.abs(row - selectedRow) == 1 && Math.abs(col - selectedCol) == 1) {
+            return true;
+        } else if (Math.abs(row - selectedRow) == 2 && Math.abs(col - selectedCol) == 2) {
+            int midRow = (row + selectedRow) / 2;
+            int midCol = (col + selectedCol) / 2;
+            return board[midRow][midCol] != ' ' && board[midRow][midCol] != board[selectedRow][selectedCol];
+        }
+        return false;
     }
 
     private void updateBoard() {
@@ -113,6 +150,28 @@ public class JogoDamas extends JFrame {
                 }
                 updateButton(i, j);
             }
+        }
+        checkWinCondition();
+    }
+
+    private void checkWinCondition() {
+        boolean whiteExists = false;
+        boolean blackExists = false;
+        for (int i = 0; i < 8; i++) {
+            for (int j = 0; j < 8; j++) {
+                if (board[i][j] == 'W' || board[i][j] == 'K') {
+                    whiteExists = true;
+                } else if (board[i][j] == 'B' || board[i][j] == 'k') {
+                    blackExists = true;
+                }
+            }
+        }
+        if (!whiteExists) {
+            JOptionPane.showMessageDialog(this, "Black wins!");
+            System.exit(0);
+        } else if (!blackExists) {
+            JOptionPane.showMessageDialog(this, "White wins!");
+            System.exit(0);
         }
     }
 
